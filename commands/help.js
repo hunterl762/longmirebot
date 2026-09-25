@@ -7,6 +7,7 @@ module.exports = {
   async execute({ client, message, prefix, settingsStore }) {
     const commands = [...client.commands.values()]
       .filter((command, index, all) => all.findIndex((item) => item.name === command.name) === index)
+      .filter((command) => !command.hidden || message.author.id === process.env.BOT_OWNER_ID)
       .filter((command) => settingsStore.getCommandRule(message.guild.id, command).enabled)
       .sort((a, b) => a.name.localeCompare(b.name));
 

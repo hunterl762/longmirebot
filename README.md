@@ -85,10 +85,11 @@ The dashboard lets a server manager control each command separately. A command c
 
 Server managers bypass role/channel restrictions so they can troubleshoot configuration. A disabled command remains disabled until it is re-enabled from the dashboard.
 
-Owner-only commands require `BOT_OWNER_ID`. The legacy `webhook` command is disabled by default and only works when `OWNER_WEBHOOK_URL` is set.
+Owner-only commands require `BOT_OWNER_ID`. The hidden `announce` command broadcasts an announcement to every server the bot is in and is rejected for every user except the configured bot owner. The legacy `webhook` command is disabled by default and only works when `OWNER_WEBHOOK_URL` is set.
 
 ## Commands
 
+- `announce <message>` (bot owner only; hidden from normal help/dashboard)
 - `avatar [@user]`
 - `botinfo`
 - `help`

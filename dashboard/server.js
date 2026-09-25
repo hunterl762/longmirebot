@@ -12,6 +12,7 @@ const ADMINISTRATOR = 0x8n;
 function uniqueCommands(client) {
   return [...client.commands.values()]
     .filter((command, index, all) => all.findIndex((item) => item.name === command.name) === index)
+    .filter((command) => !command.hidden)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
