@@ -85,7 +85,7 @@ The dashboard lets a server manager control each command separately. A command c
 
 Server managers bypass role/channel restrictions so they can troubleshoot configuration. A disabled command remains disabled until it is re-enabled from the dashboard.
 
-Owner-only commands require `BOT_OWNER_ID`. The hidden `announce` command broadcasts an announcement to every server the bot is in and is rejected for every user except the configured bot owner. The legacy `webhook` command is disabled by default and only works when `OWNER_WEBHOOK_URL` is set.
+Owner-only commands require `BOT_OWNER_ID`. The hidden `announce` command broadcasts an announcement to every server the bot is in and is rejected for every user except the configured bot owner. The `serverlist` command is also owner-only, appears in the dashboard with a Bot owner only badge, and DMs the bot owner a list of every connected server. The legacy `webhook` command is disabled by default and only works when `OWNER_WEBHOOK_URL` is set.
 
 ## Commands
 
@@ -96,6 +96,7 @@ Owner-only commands require `BOT_OWNER_ID`. The hidden `announce` command broadc
 - `ping`
 - `purge <1-100>`
 - `serverinfo`
+- `serverlist` (bot owner only; visible in dashboard)
 - `stats`
 - `set-stream <status text>`
 - `uptime`
