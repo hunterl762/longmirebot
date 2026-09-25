@@ -1,47 +1,48 @@
-# longmirebot
-discord node.js bot
-## How to install:
-> To run the bot right you need to do the following terminal commands as listed below:
-```node
-npm install discord.js
-npm install moment
-npm install moment-duration-format
-npm install duration
-npm install ms
-npm install fs
-```
-## Why these packages are needed: 
-> These packages are required for the bots uptime and for the discord.js it is needed to run on discords api services, to install you must follow the commands above.
+# Longmire Bot
 
-## How to download the files:
+Modernized Longmire Bot using Discord.js v14 with a web dashboard for per-server command configuration.
 
->To download do the following:
-```
-git clone https://github.com/OwnerHunter/longmirebot.git
-```
-#
-> and make a ```botconfig.json``` file and set it up like this:
-```json
-{
-  "token": "your-bot-token",
-  "prefix": "your-desired-prefix"
-}
-```
-# How to recive a discord bot token go [here](https://discordapp.com/developers/applications/me) 
-how to make a bot
->
-1. click on the creat a bot
-2. name your bot
-3. copy your client id 
-4. invite the bot to your server by making a invite, easy invite maker is this [click here](https://discordapi.com/permissions.html)  to take you to discordapi permission calculator
-5. Go and copy and paste the link after setting up the link and invite the bot to the desired server
-6. go back to [discord developer's portal](https://discordapp.com/developers/applications/me) and go to bot 
-7. Click the "create bot user" button on the right hand side of your screen
-8. then copy the bot token located under your bots name
-9. open the "botconfig.json" file and paste your bot token where it says "your-bot-token" 
-10. Now open the terminal and do "node ." or "node bot.js" and your bot should start
+## Upgrade summary
 
-# Bot Makers/Coders:
-> 
-- Main Developer: Hunter L.#3037
-- others will be listed at a later date
+- Discord.js upgraded from v11 to `14.27.0`.
+- Old v11 embed, cache, message-event, presence and webhook APIs were replaced.
+- Hard-coded webhook credentials were removed. **Rotate/delete the old webhooks in Discord because Git history can still contain those exposed secrets.**
+- Configuration now uses environment variables instead of `botconfig.json`.
+- Server admins can sign into a web dashboard and change the server prefix or enable/disable individual commands.
+- Per-server settings are stored in `data/settings.json`.
+
+## Requirements
+
+- Node.js 20+
+- A Discord bot application
+- **Message Content Intent** and **Server Members Intent** enabled in the Discord Developer Portal
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env
+npm start
+```
+
+Fill in `.env` before starting the bot. The dashboard defaults to `http://localhost:3000`.
+
+For Discord OAuth2, add this local redirect URL in the Developer Portal:
+
+```text
+http://localhost:3000/auth/discord/callback
+```
+
+Then set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URI`, and `SESSION_SECRET` in `.env`.
+
+The dashboard requests only `identify` and `guilds`. A user can configure a server only if they have **Manage Server** or **Administrator** and the bot is present in that server.
+
+## Commands
+
+`avatar [@user]`, `botinfo`, `help`, `ping`, `purge <1-100>`, `serverinfo`, `stats`, `set-stream <status>`, `uptime`, `userinfo [@user]`.
+
+`purge` requires Manage Messages. `set-stream` is restricted to `OWNER_ID`.
+
+## Production dashboard note
+
+Serve the dashboard over HTTPS and replace the default `express-session` MemoryStore with a persistent session store (for example Redis) before running multiple processes or instances.
