@@ -1,197 +1,136 @@
-const Discord = require("discord.js");
-
-const fs = require("fs");
-
-const config = require("./botconfig.json");
-
-const bot = new Discord.Client({
-
-    disableEveryone: true,
-
-    });
-
-const moment = require("moment");
-
-bot.commands = new Discord.Collection();
-
-
-
-fs.readdir("./commands/", (err, files) =>{
-
-    if(err) console.log(err);
-
-
-
-    let jsfile = files.filter(f => f.split(".").pop() === "js")
-
-    if(jsfile <= 0){
-
-        console.log("Commands Not Found");
-
-        return;
-
-    }
-
-
-
-    jsfile.forEach((f, i) =>{
-
-        let props = require(`./commands/${f}`);
-
-        console.log(`${i + 1}: ${f} loaded!`);
-
-        bot.commands.set(props.help.name, props);
-
-    });
-
-});
-
-
-
-bot.on("ready", async () => {
-
-    let beotch = "(sethb#9447)";
-
-    console.log(`${bot.user.username}'s is online | ${config.prefix}help for commands`);
-
-    console.log(`Bitch${beotch} better have my money`);
-
-    bot.user.setActivity(`on ${bot.guilds.size} servers | ${config.prefix}help for commands`);
-
-    const hook = new Discord.WebhookClient('560665796901208065', 'OS7uqEwY0btNBrn70KoCckjFo-8VWaudwwmXKIy4roxcqiXq8f7QNPquwj97xyA9HuqQ');
-
-    hook.send(`\`\`\`fix\n${bot.user.username}'s is online | ${config.prefix}help for commands\nPlaying on ${bot.guilds.size} servers | ${config.prefix}help for commands\`\`\``)
-
-    console.error;
-
-    
-
-});
-
-bot.on("guildCreate", guild =>{
-
-    console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members! I am now in ${bot.guilds.size} servers`);
-
-    bot.setActivity("dnd");
-
-    bot.user.setPresence({
-
-        game: {
-
-            name : `on ${bot.guilds.size} servers | ${config.prefix}help for commands`,
-
-            type : 'PLAYING',
-
-        }
-
-    })
-
-});
-
-bot.on("guildDelete", guild => {
-
-  console.log(`I have been removed from: ${guild.name} (id: ${guild.id}) I'm now in ${bot.guilds.size} server/s`);
-
-  bot.setActivity("dnd");
-
-  bot.user.setPresence({
-
-        game: {
-
-            name : `on ${bot.guilds.size} servers | ${config.prefix}help for commands`,
-
-            type : 'Playing',
-
-        }
-
-    })
-
-});
-
-bot.on('guildMemberAdd', message => {
-
-message.guild.channels.get('482878394258685952').send({embed: {
-
-color: "RANDOM",
-
-author: {
-
-  name: bot.user.username,
-
-  icon_url: bot.user.avatarURL
-
-},
-
-title: "Welcome To Fire And Ice's discord Server!",
-
-url: "https://hunterswebdesigns.ml",
-
-description: "please use `-agree` to join the server fully",
-
-fields: [{
-
-    name: "Bot Help",
-
-    value: "If you joined for bot help after typing `-agree` type `+new <reason for help>`"
-
-  },
-
-  {
-
-    name: "Explore Our Website",
-
-    value: "[Click Here](https://fireandicehosting.com) to explore the website"
-
-  }
-
-],
-
-timestamp: new Date(),
-
-footer: {
-
-  icon_url: bot.user.avatarURL,
-
-  text: "© Fire And Ice Hosting"
-
+require('dotenv').config();
+
+const fs = require('node:fs');
+const path = require('node:path');
+const {
+  ActivityType,
+  Client,
+  Collection,
+  Events,
+  GatewayIntentBits,
+  PermissionFlagsBits,
+} = require('discord.js');
+const { SettingsStore } = require('./lib/settings');
+const { startDashboard } = require('./dashboard/server');
+
+if (!process.env.BOT_TOKEN) {
+  throw new Error('BOT_TOKEN is required. Copy .env.example to .env and add your Discord bot token.');
 }
 
-}}); 
-
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
+  ],
 });
 
-bot.on("message", async message => {
+client.commands = new Collection();
+const commandDirectory = path.join(__dirname, 'commands');
+for (const filename of fs.readdirSync(commandDirectory).filter((file) => file.endsWith('.js'))) {
+  const command = require(path.join(commandDirectory, filename));
+  if (!command.name || typeof command.execute !== 'function') {
+    console.warn(`Skipping invalid command file: ${filename}`);
+    continue;
+  }
 
-    if(message.author.bot) return;
+  client.commands.set(command.name.toLowerCase(), command);
+  for (const alias of command.aliases || []) {
+    client.commands.set(alias.toLowerCase(), command);
+  }
+}
 
-    if(message.channel.type === "dm") return;
+const settingsStore = new SettingsStore({ defaultPrefix: process.env.DEFAULT_PREFIX || '?' });
 
+function hasManageGuild(member) {
+  return member.permissions.has(PermissionFlagsBits.Administrator)
+    || member.permissions.has(PermissionFlagsBits.ManageGuild);
+}
 
+function isAllowedByRule(message, command, rule) {
+  const isManager = hasManageGuild(message.member);
 
-    let prefix = config.prefix
+  if (!rule.enabled) {
+    return { allowed: false, reason: 'That command is disabled in this server.' };
+  }
 
-    if(!message.content.startsWith(prefix)) return;
+  if (command.ownerOnly) {
+    if (!process.env.BOT_OWNER_ID || message.author.id !== process.env.BOT_OWNER_ID) {
+      return { allowed: false, reason: 'That command is restricted to the configured bot owner.' };
+    }
+    return { allowed: true };
+  }
 
+  if (rule.adminOnly && !isManager) {
+    return { allowed: false, reason: 'That command is restricted to server managers.' };
+  }
 
+  if (!isManager && rule.allowedChannelIds.length > 0 && !rule.allowedChannelIds.includes(message.channel.id)) {
+    return { allowed: false, reason: 'That command is not enabled in this channel.' };
+  }
 
-    let messageArray = message.content.split(" ");
+  if (!isManager && rule.allowedRoleIds.length > 0) {
+    const hasAllowedRole = rule.allowedRoleIds.some((roleId) => message.member.roles.cache.has(roleId));
+    if (!hasAllowedRole) {
+      return { allowed: false, reason: 'You do not have a role that can use that command.' };
+    }
+  }
 
-    let cmd = messageArray[0];
+  return { allowed: true };
+}
 
-    let args = messageArray.slice(1);
+client.once(Events.ClientReady, (readyClient) => {
+  console.log(`${readyClient.user.tag} is online in ${readyClient.guilds.cache.size} server(s).`);
+  readyClient.user.setActivity(`${process.env.DEFAULT_PREFIX || '?'}help • ${readyClient.guilds.cache.size} servers`, {
+    type: ActivityType.Watching,
+  });
 
-
-
-    let commandfile = bot.commands.get(cmd.slice(prefix.length));
-
-    if(commandfile) commandfile.run(bot,message,args);
-
-    if(message.content.indexOf(prefix) !== 0) return;
-
+  startDashboard({ client: readyClient, settingsStore });
 });
 
+client.on(Events.GuildCreate, () => {
+  client.user.setActivity(`${process.env.DEFAULT_PREFIX || '?'}help • ${client.guilds.cache.size} servers`, {
+    type: ActivityType.Watching,
+  });
+});
 
+client.on(Events.GuildDelete, () => {
+  client.user.setActivity(`${process.env.DEFAULT_PREFIX || '?'}help • ${client.guilds.cache.size} servers`, {
+    type: ActivityType.Watching,
+  });
+});
 
-bot.login(config.token)
+client.on(Events.MessageCreate, async (message) => {
+  if (!message.guild || message.author.bot) return;
 
+  const guildSettings = settingsStore.getGuild(message.guild.id);
+  const prefix = guildSettings.prefix;
+  if (!message.content.startsWith(prefix)) return;
 
+  const raw = message.content.slice(prefix.length).trim();
+  if (!raw) return;
+
+  const [commandName, ...args] = raw.split(/\s+/);
+  const command = client.commands.get(commandName.toLowerCase());
+  if (!command) return;
+
+  const rule = settingsStore.getCommandRule(message.guild.id, command);
+  const access = isAllowedByRule(message, command, rule);
+  if (!access.allowed) {
+    await message.reply({ content: access.reason, allowedMentions: { repliedUser: false } }).catch(() => {});
+    return;
+  }
+
+  try {
+    await command.execute({ client, message, args, prefix, settingsStore });
+  } catch (error) {
+    console.error(`Command ${command.name} failed:`, error);
+    await message.reply({
+      content: 'Something went wrong while running that command.',
+      allowedMentions: { repliedUser: false },
+    }).catch(() => {});
+  }
+});
+
+client.login(process.env.BOT_TOKEN);
