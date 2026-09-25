@@ -1,19 +1,20 @@
 {
-  "name": "command-handler-bot",
-  "version": "0.0.1",
-  "description": "Discord js command handler bot ",
+  "name": "longmirebot",
+  "version": "2.0.0",
+  "description": "Longmire Discord bot with a web dashboard for per-server command configuration",
   "main": "bot.js",
   "scripts": {
-    "test": "node bot.js"
+    "start": "node bot.js",
+    "dev": "node --watch bot.js",
+    "check": "node --check bot.js && node --check dashboard.js && node --check settings.js"
   },
-  "author": "Hunter L.#3037",
+  "engines": { "node": ">=20.0.0" },
+  "author": "Hunter L.",
   "license": "MIT",
   "dependencies": {
-    "discord.js": "^11.4.2",
-    "duration": "^0.2.2",
-    "fs": "0.0.1-security",
-    "moment": "^2.24.0",
-    "moment-duration-format": "^2.2.2",
-    "ms": "^2.1.1"
+    "discord.js": "^14.27.0",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0"
   }
 }
