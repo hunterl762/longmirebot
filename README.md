@@ -1,47 +1,116 @@
-# longmirebot
-discord node.js bot
-## How to install:
-> To run the bot right you need to do the following terminal commands as listed below:
-```node
-npm install discord.js
-npm install moment
-npm install moment-duration-format
-npm install duration
-npm install ms
-npm install fs
-```
-## Why these packages are needed: 
-> These packages are required for the bots uptime and for the discord.js it is needed to run on discords api services, to install you must follow the commands above.
+# Longmire Bot v2
 
-## How to download the files:
+Longmire Bot has been modernized from the original `discord.js` v11 codebase to `discord.js` v14 and now includes a web dashboard for per-server command configuration.
 
->To download do the following:
-```
-git clone https://github.com/OwnerHunter/longmirebot.git
-```
-#
-> and make a ```botconfig.json``` file and set it up like this:
-```json
-{
-  "token": "your-bot-token",
-  "prefix": "your-desired-prefix"
-}
-```
-# How to recive a discord bot token go [here](https://discordapp.com/developers/applications/me) 
-how to make a bot
->
-1. click on the creat a bot
-2. name your bot
-3. copy your client id 
-4. invite the bot to your server by making a invite, easy invite maker is this [click here](https://discordapi.com/permissions.html)  to take you to discordapi permission calculator
-5. Go and copy and paste the link after setting up the link and invite the bot to the desired server
-6. go back to [discord developer's portal](https://discordapp.com/developers/applications/me) and go to bot 
-7. Click the "create bot user" button on the right hand side of your screen
-8. then copy the bot token located under your bots name
-9. open the "botconfig.json" file and paste your bot token where it says "your-bot-token" 
-10. Now open the terminal and do "node ." or "node bot.js" and your bot should start
+## What changed
 
-# Bot Makers/Coders:
-> 
-- Main Developer: Hunter L.#3037
-- others will be listed at a later date
+- Updated to `discord.js` `^14.27.0` and Discord API v10 conventions.
+- Replaced legacy `RichEmbed`, old cache accessors, `message` event usage, and v11 presence APIs.
+- Recovered the original commands from `commands.zip` and turned them into a normal `commands/` folder.
+- Repaired commands that were broken or depended on undeclared packages.
+- Removed hard-coded webhook credentials from the source code.
+- Added Discord OAuth2 login for the dashboard.
+- Added per-server command settings:
+  - custom prefix
+  - command enabled/disabled state
+  - Manage Server-only mode
+  - allowed roles
+  - allowed channels
+- Added persistent JSON settings in `data/guild-settings.json` (ignored by Git).
+
+## Requirements
+
+- Node.js 18 or newer
+- A Discord application/bot
+- The **Message Content Intent** enabled in the Discord Developer Portal
+- The **Server Members Intent** enabled in the Discord Developer Portal
+
+## Installation
+
+```bash
+git clone https://github.com/hunterl762/longmirebot.git
+cd longmirebot
+npm install
+cp .env.example .env
+```
+
+Edit `.env` and provide at minimum:
+
+```env
+BOT_TOKEN=your-bot-token
+DISCORD_CLIENT_ID=your-application-id
+DISCORD_CLIENT_SECRET=your-oauth-client-secret
+DASHBOARD_CALLBACK_URL=http://localhost:3000/auth/discord/callback
+DASHBOARD_URL=http://localhost:3000
+PORT=3000
+SESSION_SECRET=use-a-long-random-value
+DEFAULT_PREFIX=?
+BOT_OWNER_ID=your-discord-user-id
+```
+
+Then start the bot and dashboard together:
+
+```bash
+npm start
+```
+
+Open `http://localhost:3000` and sign in with Discord.
+
+## Discord OAuth setup
+
+In the Discord Developer Portal for the same application as the bot:
+
+1. Open **OAuth2**.
+2. Add your exact callback URL to **Redirects**. For local development use:
+   `http://localhost:3000/auth/discord/callback`
+3. Put that exact same URL in `DASHBOARD_CALLBACK_URL`.
+4. The dashboard requests the `identify` and `guilds` scopes.
+
+Only users who have **Manage Server** or **Administrator** in a server can configure it, and the server must already contain Longmire Bot.
+
+## Bot permissions
+
+The bot normally needs:
+
+- View Channels
+- Send Messages
+- Embed Links
+- Read Message History
+
+The `purge` command additionally needs **Manage Messages** in the channel where it is used.
+
+## Command configuration
+
+The dashboard lets a server manager control each command separately. A command can be disabled, restricted to server managers, limited to selected roles, or limited to selected channels.
+
+Server managers bypass role/channel restrictions so they can troubleshoot configuration. A disabled command remains disabled until it is re-enabled from the dashboard.
+
+Owner-only commands require `BOT_OWNER_ID`. The legacy `webhook` command is disabled by default and only works when `OWNER_WEBHOOK_URL` is set.
+
+## Commands
+
+- `avatar [@user]`
+- `botinfo`
+- `help`
+- `ping`
+- `purge <1-100>`
+- `serverinfo`
+- `stats`
+- `set-stream <status text>`
+- `uptime`
+- `userinfo [@user]`
+- `webhook` (owner-only, disabled by default)
+
+## Security note
+
+The original repository contained Discord webhook credentials directly in source files. Removing them from the current branch does **not** invalidate credentials that were previously exposed in Git history. Delete/rotate those webhooks in Discord before using this version.
+
+Never commit `.env`, bot tokens, OAuth client secrets, session secrets, or webhook URLs.
+
+## Development checks
+
+```bash
+npm run check
+```
+
+This performs a JavaScript syntax check across the project.

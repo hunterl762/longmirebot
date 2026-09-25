@@ -1,0 +1,6 @@
+node_modules/
+.env
+npm-debug.log*
+data/guild-settings.json
+data/guild-settings.json.tmp
+.DS_Store
